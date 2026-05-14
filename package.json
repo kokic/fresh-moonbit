@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/sinelaw/fresh/main/crates/fresh-editor/plugins/schemas/package.schema.json",
   "name": "moonbit",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "MoonBit programming language support - syntax highlighting, LSP integration, and installation helpers",
   "type": "bundle",
   "author": "kokic",
@@ -20,6 +20,11 @@
           "tabSize": 2,
           "useTabs": false,
           "autoIndent": true
+        },
+        "lsp": {
+          "command": "moon-lsp",
+          "args": ["--stdio"],
+          "autoStart": true
         }
       }
     ]
