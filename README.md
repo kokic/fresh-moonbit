@@ -1,9 +1,6 @@
-# MoonBit Language Support for Fresh
+# [MoonBit] Language Support for [Fresh]
 
->[!warning]
-> 🚧
-
-Syntax highlighting and LSP integration for MoonBit.
+Syntax highlighting and LSP integration for [MoonBit].
 
 ## Installation
 
@@ -16,3 +13,6 @@ https://github.com/kokic/fresh-moonbit
 ## Credits
 
 Grammar from [hyrious/moonbit-syntax-highlight](https://github.com/hyrious/moonbit-syntax-highlight). 
+
+[MoonBit]: https://www.moonbitlang.com/
+[Fresh]: https://getfresh.dev/
