@@ -680,13 +680,11 @@ contexts:
       scope: keyword.operator.assignment.moonbit
     - match: '=~'
       scope: keyword.operator.match.moonbit
-    - match: '<=|>=|==|!='
-      scope: keyword.operator.comparison.moonbit
     - match: '<<|>>'
       scope: keyword.operator.moonbit
     - match: '\|>|<\||\&\&|\|\|'
       scope: keyword.operator.moonbit
-    - match: '[<>]'
+    - match: '(?:[!=]=|[<>]=?)(?![<>])'
       scope: keyword.operator.comparison.moonbit
     - match: '=(?!=)'
       scope: keyword.operator.assignment.moonbit
