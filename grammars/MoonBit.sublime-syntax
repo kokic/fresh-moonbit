@@ -353,10 +353,15 @@ contexts:
   braces:
     - match: '\)'
       scope: punctuation.section.group.end.moonbit
-      pop: true
     - match: '\('
       scope: punctuation.section.group.begin.moonbit
-      push: expressions
+      push: paren-expression
+
+  paren-expression:
+    - match: '\)'
+      scope: punctuation.section.group.end.moonbit
+      pop: true
+    - include: expressions
 
   function-calls:
     - match: '\b(not)(\()'
@@ -638,6 +643,18 @@ contexts:
     - match: '}'
       scope: punctuation.section.interpolation.end.moonbit
       pop: true
+    - match: '{'
+      scope: punctuation.section.block.begin.moonbit
+      push: string-interpolation-block
+    - include: expressions
+
+  string-interpolation-block:
+    - match: '}'
+      scope: punctuation.section.block.end.moonbit
+      pop: true
+    - match: '{'
+      scope: punctuation.section.block.begin.moonbit
+      push: string-interpolation-block
     - include: expressions
 
   escaped-chars:
@@ -664,13 +681,13 @@ contexts:
     - match: '=~'
       scope: keyword.operator.match.moonbit
     - match: '<=|>=|==|!='
-      scope: keyword.operator.moonbit
+      scope: keyword.operator.comparison.moonbit
     - match: '<<|>>'
       scope: keyword.operator.moonbit
     - match: '\|>|<\||\&\&|\|\|'
       scope: keyword.operator.moonbit
-    - match: '<|>'
-      scope: keyword.operator.moonbit
+    - match: '[<>]'
+      scope: keyword.operator.comparison.moonbit
     - match: '=(?!=)'
       scope: keyword.operator.assignment.moonbit
     - match: '\.\.<|\.\.=|\.\.(?!\.)'
