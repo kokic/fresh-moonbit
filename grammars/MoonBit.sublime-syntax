@@ -25,9 +25,10 @@ variables:
   ident_upper: '[A-Z][\w_]*'
   ident_path: '[a-z][\w_/]*'
   attribute_name: '[A-Za-z_][\w]*(?:\.[A-Za-z_][\w]*)*'
-  builtin_types: '(?:Add|Arbitrary|BitAnd|BitOr|BitXOr|Compare|Debug|Default|Div|Eq|Error|FromJson|Hash|Input|Logger|Mod|Mul|Show|Shl|Shr|Step|Sub|ToJson|ToStringView|Array|ArrayView|BigInt|Bool|Byte|Bytes|BytesView|Char|Double|Failure|FixedArray|Float|Hasher|Int|Int16|Int64|Iter|Iter2|IterResult|Json|Map|MatchResult|MutArrayView|Option|ReadOnlyArray|Regex|Result|Set|SourceLoc|String|StringBuilder|StringView|Tuple|UInt|UInt16|UInt64|Unit|UninitializedArray)'
+  builtin_types: '(?:Add|Arbitrary|BitAnd|BitOr|BitXOr|Compare|Debug|Default|Div|Eq|Error|FromJson|Hash|Input|Logger|Mod|Mul|Neg|Show|Shl|Shr|Step|Sub|ToJson|ToStringView|ArgsLoc|Array|ArrayView|BenchError|BigInt|Bool|Byte|Bytes|BytesView|Char|Double|Failure|FixedArray|Float|Hasher|InspectError|Int|Int16|Int64|Iter|Iter2|IterResult|Json|Map|MatchResult|MutArrayView|Option|ReadOnlyArray|Ref|Regex|Result|Set|SnapshotError|SourceLoc|String|StringBuilder|StringView|Tuple|UInt|UInt16|UInt64|Unit|UninitializedArray)'
   op_functions: '(?:not|land|lnot|lor|lxor|op_add|op_sub|op_div|op_mul|op_mod|op_equal|op_not_equal|op_ge|op_gt|op_le|op_lt|op_get|op_set|op_shl|op_shr)'
   escaped_char: '\\(?:[nrtb\"''\\]|x\h{2}|o[0-3][0-7]{2}|u\h{4}|u\{(?:\h_*){1,6}\})'
+  regex_escaped_char: '\\(?:[nrtbfvdDsSwWbB\"''\\./*+?^$(){}\[\]|-]|x\h{2}|u\h{4}|u\{(?:\h_*){1,6}\})'
   int_suffixes: '[uUlL]+'
   dec_literal: '\d[\d_]*'
   hex_literal: '\h[\h_]*'
@@ -166,6 +167,26 @@ contexts:
         2: entity.name.type.moonbit
 
   function-definitions:
+    - match: \b(fn)\s+(&)({{ident_upper}})(\:\:)({{ident_lower}}|{{ident_upper}})(!?)\s*(\[)
+      captures:
+        1: keyword.declaration.function.moonbit
+        2: keyword.operator.moonbit
+        3: support.type.moonbit
+        4: punctuation.accessor.double-colon.moonbit
+        5: entity.name.function.moonbit
+        6: keyword.declaration.error.moonbit
+        7: punctuation.definition.generic.begin.moonbit
+      push: type-parameters
+    - match: \b(fn)\s+(&)({{ident_upper}})(\:\:)({{ident_lower}}|{{ident_upper}})(!?)\s*(\()
+      captures:
+        1: keyword.declaration.function.moonbit
+        2: keyword.operator.moonbit
+        3: support.type.moonbit
+        4: punctuation.accessor.double-colon.moonbit
+        5: entity.name.function.moonbit
+        6: keyword.declaration.error.moonbit
+        7: punctuation.section.group.begin.moonbit
+      push: parameters
     - match: \b(fn)\s+(?:({{ident_upper}})(\:\:))*({{ident_lower}}|{{ident_upper}})(!?)\s*(\[)
       captures:
         1: keyword.declaration.function.moonbit
@@ -203,6 +224,16 @@ contexts:
       push: parameters
 
   type-parameters:
+    - match: '(\])\s*(&)({{ident_upper}})(\:\:)({{ident_lower}}|{{ident_upper}})(!?)\s*(\()'
+      captures:
+        1: punctuation.definition.generic.end.moonbit
+        2: keyword.operator.moonbit
+        3: support.type.moonbit
+        4: punctuation.accessor.double-colon.moonbit
+        5: entity.name.function.moonbit
+        6: keyword.declaration.error.moonbit
+        7: punctuation.section.group.begin.moonbit
+      set: parameters
     - match: '(\])\s*(?:({{ident_upper}})(\:\:))*({{ident_lower}}|{{ident_upper}})(!?)\s*(\()'
       captures:
         1: punctuation.definition.generic.end.moonbit
@@ -226,6 +257,11 @@ contexts:
     - match: \]
       scope: punctuation.definition.generic.end.moonbit
       pop: true
+    - match: \b({{builtin_types}})\b(!?)(\??)
+      scope: support.type.builtin.moonbit
+      captures:
+        2: keyword.declaration.error.moonbit
+        3: keyword.declaration.optional.moonbit
     - match: '{{ident_upper}}'
       scope: variable.parameter.generic.moonbit
     - include: variables
@@ -240,13 +276,6 @@ contexts:
     - match: \)
       scope: punctuation.section.group.end.moonbit
       pop: true
-    - include: expressions
-    - match: '\b{{ident_lower}}\b'
-      scope: variable.parameter.moonbit
-    - match: '\b{{ident_upper}}\b(!?)'
-      scope: support.type.moonbit
-      captures:
-        1: keyword.declaration.error.moonbit
     - match: ':'
       scope: punctuation.separator.type.moonbit
     - match: \(
@@ -255,6 +284,13 @@ contexts:
     - match: \[
       scope: punctuation.definition.generic.begin.moonbit
       push: bracket-body
+    - include: expressions
+    - match: '\b{{ident_lower}}\b'
+      scope: variable.parameter.moonbit
+    - match: '\b{{ident_upper}}\b(!?)'
+      scope: support.type.moonbit
+      captures:
+        1: keyword.declaration.error.moonbit
 
   return-type:
     - match: $\n?
@@ -281,7 +317,7 @@ contexts:
       captures:
         1: support.type.moonbit
         2: punctuation.definition.generic.begin.moonbit
-      push: bracket-body
+      push: type-arguments
     - include: types
 
   brace-body:
@@ -294,14 +330,22 @@ contexts:
     - match: \]
       scope: punctuation.definition.generic.end.moonbit
       pop: true
-    - include: type-parameters
+    - include: type-arguments
+
+  type-arguments:
+    - match: \]
+      scope: punctuation.definition.generic.end.moonbit
+      pop: true
+    - include: types
+    - include: variables
+    - include: operators
 
   expressions:
     - include: attributes
     - include: variables
     - include: strings
-    - include: keywords
     - include: function-calls
+    - include: keywords
     - include: braces
     - include: numbers
     - include: operators
@@ -365,7 +409,7 @@ contexts:
         1: support.type.builtin.moonbit
         2: keyword.declaration.error.moonbit
         3: punctuation.definition.generic.begin.moonbit
-      push: type-parameters
+      push: type-arguments
     - match: \b({{builtin_types}})\b(!?)(\??)
       scope: support.type.builtin.moonbit
       captures:
@@ -376,7 +420,7 @@ contexts:
         1: storage.type.moonbit
         2: keyword.declaration.error.moonbit
         3: punctuation.definition.generic.begin.moonbit
-      push: type-parameters
+      push: type-arguments
     - match: \b({{ident_upper}})\b(!?)(\??)
       scope: storage.type.moonbit
       captures:
@@ -447,11 +491,9 @@ contexts:
     - include: integers
 
   floats:
-    - match: '\b0[xX]({{hex_literal}})\.(?:{{hex_literal}})?(?:{{float_exponent}})?({{float_power}})'
+    - match: '\b0[xX]({{hex_literal}})\.(?:{{hex_literal}})?(?:{{float_power}})?'
       scope: constant.numeric.float.moonbit
-    - match: '\b0[xX]({{hex_literal}})\.({{hex_literal}})(?:{{float_exponent}})?'
-      scope: constant.numeric.float.moonbit
-    - match: '\b0[xX]({{hex_literal}})({{float_exponent}})\b'
+    - match: '\b0[xX]({{hex_literal}})({{float_power}})\b'
       scope: constant.numeric.float.moonbit
     - match: '\b0[xX]({{hex_literal}})\.(?![A-Za-z._''])'
       scope: constant.numeric.float.moonbit
@@ -566,7 +608,7 @@ contexts:
     - match: '"'
       scope: punctuation.definition.string.end.moonbit
       pop: true
-    - include: escaped-chars
+    - include: regex-escaped-chars
 
   char-content:
     - meta_include_prototype: false
@@ -602,6 +644,10 @@ contexts:
     - match: '{{escaped_char}}'
       scope: constant.character.escape.moonbit
 
+  regex-escaped-chars:
+    - match: '{{regex_escaped_char}}'
+      scope: constant.character.escape.moonbit
+
   operators:
     - match: '\x{2200}|\x{2192}'
       scope: keyword.operator.moonbit
@@ -613,8 +659,18 @@ contexts:
       scope: storage.type.function.arrow.moonbit
     - match: ':(?!:)'
       scope: punctuation.separator.moonbit
+    - match: '\+='
+      scope: keyword.operator.assignment.moonbit
     - match: '=~'
       scope: keyword.operator.match.moonbit
+    - match: '<=|>=|==|!='
+      scope: keyword.operator.moonbit
+    - match: '<<|>>'
+      scope: keyword.operator.moonbit
+    - match: '\|>|<\||\&\&|\|\|'
+      scope: keyword.operator.moonbit
+    - match: '<|>'
+      scope: keyword.operator.moonbit
     - match: '=(?!=)'
       scope: keyword.operator.assignment.moonbit
     - match: '\.\.<|\.\.=|\.\.(?!\.)'
@@ -633,7 +689,7 @@ contexts:
       scope: punctuation.section.block.end.moonbit
     - match: '\?'
       scope: keyword.operator.none.moonbit
-    - match: '\+|-|\*|\/|%|\|>|>>|<<|&&|\|\||\&|\||<=?|>=?|==|!='
+    - match: '\+|-|\*|\/|%|\&|\||\^|\!'
       scope: keyword.operator.moonbit
     - match: \b{{op_functions}}\b
       scope: keyword.operator.word.moonbit
